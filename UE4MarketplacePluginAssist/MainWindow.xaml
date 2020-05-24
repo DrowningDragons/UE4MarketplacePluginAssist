@@ -1,0 +1,46 @@
+﻿<Window x:Class="UE4MarketplacePluginAssist.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UE4MarketplacePluginAssist"
+        mc:Ignorable="d"
+        Title="UE4 Marketplace Plugin Assist" Height="400" Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#262626">
+    <Grid>
+        <StackPanel Orientation="Vertical">
+            <Button x:Name="Button_About" Content="About" HorizontalAlignment="Right" Margin="0,0,30,0" Height="20" Width="50" Click="Button_About_Click"/>
+            <Button x:Name="Button_AddEngineVersion" Content="Change Engine Version" HorizontalAlignment="Center" Margin="0,20,0,10" Height="40" Width="150" Click="Button_AddEngineVersion_Click"/>
+
+            <StackPanel Margin="0,25,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="Engine Root Directory:" Foreground="#f1f1f1"/>
+                <TextBox x:Name="Text_EngineRoot" IsEnabled="False" Height="30" Margin="10,0,0,0" TextWrapping="Wrap" Text="" Width="500" TextChanged="Text_EngineRoot_TextChanged" Foreground="#f1f1f1" Background="#151515"/>
+                <Button x:Name="Browse_EngineRoot" IsEnabled="False" Content="Browse" Margin="10,0,0,0" Height="30" Width="75" Click="Browse_EngineRoot_Click"/>
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Plugin File:" Foreground="#f1f1f1"/>
+                <TextBox x:Name="Text_PluginRoot" IsEnabled="False" Height="30" Margin="71,0,0,0" TextWrapping="Wrap" Text="" Width="500" TextChanged="Text_PluginRoot_TextChanged" Foreground="#f1f1f1" Background="#151515"/>
+                <Button x:Name="Browse_PluginRoot" IsEnabled="False" Content="Browse" Margin="10,0,0,0" Height="30" Width="75" Click="Browse_PluginRoot_Click"/>
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Pack Output Directory:" Foreground="#f1f1f1"/>
+                <TextBox x:Name="Text_Output" IsEnabled="False" Height="30" Margin="9,0,0,0" TextWrapping="Wrap" Text="" Width="500" TextChanged="Text_Output_TextChanged" Foreground="#f1f1f1" Background="#151515"/>
+                <Button x:Name="Browse_Output" IsEnabled="False" Content="Browse" Margin="10,0,0,0" Height="30" Width="75" Click="Browse_Output_Click"/>
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Zip Plugin on Success:" Foreground="#f1f1f1"/>
+                <CheckBox x:Name="Check_Zip" Margin="10,0,0,0" IsChecked="True" Content="" Checked="CheckBox_Checked" Unchecked="CheckBox_Checked"/>
+            </StackPanel>
+            <StackPanel Margin="10,35,10,10" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock x:Name="Text_OutputWarning" Visibility="Hidden" TextWrapping="Wrap" FontWeight="Bold" Background="Red" Text="WARNING: Pack Output Directory is NOT empty - All files will be deleted"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="Button_Start" Content="Package" IsEnabled="False" HorizontalAlignment="Center" Margin="0,10,10,10" Height="40" Width="150" Click="Button_Start_Click"/>
+                <Button x:Name="Button_StartAll" Content="Package All Engines" IsEnabled="False" HorizontalAlignment="Center" Margin="10,10,0,10" Height="40" Width="150" Click="Button_StartAll_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

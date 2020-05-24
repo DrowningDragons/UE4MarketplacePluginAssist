@@ -1,0 +1,40 @@
+﻿<Window x:Class="UE4MarketplacePluginAssist.InProgress"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:fa="http://schemas.fontawesome.io/icons/"
+        xmlns:local="clr-namespace:UE4MarketplacePluginAssist"
+        mc:Ignorable="d"
+        Title="Packaging In Progress..." Height="448.004" Width="350"
+        Closed="Window_Closed"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#262626">
+    <Grid>
+        <StackPanel Orientation="Vertical">
+            <StackPanel Margin="0,25,0,30" Orientation="Horizontal" HorizontalAlignment="Center">
+                <fa:ImageAwesome x:Name="Spinner_Progress" Opacity="0.75" Icon="CircleOutlineNotch"  Spin="True"  SpinDuration="1" />
+            </StackPanel>
+
+            <Button x:Name="Button_OpenLog" Content="Open Log" IsEnabled="False" HorizontalAlignment="Center" Margin="0,1,0,1" Height="30" Width="150" Click="Button_OpenLog_Click"/>
+            <Button x:Name="Button_ViewWarnings" Content="View Warnings" IsEnabled="False" HorizontalAlignment="Center" Margin="0,1,0,1" Height="30" Width="150" Click="Button_ViewWarnings_Click"/>
+            <Button x:Name="Button_ViewErrors" Content="View Errors" IsEnabled="False" HorizontalAlignment="Center" Margin="0,1,0,1" Height="30" Width="150" Click="Button_ViewErrors_Click"/>
+            <Button x:Name="Button_Abort" Content="Abort" IsEnabled="True" HorizontalAlignment="Center" Margin="0,15,0,0" Height="30" Width="150" Click="Button_Abort_Click"/>
+            <Button x:Name="Button_Close" Content="Close" IsEnabled="True" HorizontalAlignment="Center" Margin="0,2,0,10" Height="30" Width="150" Click="Button_Close_Click"/>
+            <Border x:Name="Border_Status" Margin="0,25,0,0" BorderBrush="Black" BorderThickness="0" Background="CadetBlue"  Height="100">
+                <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Margin="0, 0, 0, 0" Text="Packaging " FontSize="16" TextAlignment="Center" />
+                    <TextBlock x:Name="Text_Plugin" Margin="0, 0, 0, 0" Text="Plugin" FontSize="16" TextAlignment="Center" />
+                    <TextBlock Margin="0, 0, 0, 0" Text=" [4." FontSize="16" TextAlignment="Center" />
+                    <TextBlock x:Name="Text_Version" Margin="0, 0, 0, 0" Text="22" FontSize="16" TextAlignment="Center" />
+                    <TextBlock Margin="0, 0, 0, 0" Text="] " FontSize="16" TextAlignment="Center" />
+                    <TextBlock x:Name="Text_Status" Margin="0, 0, 0, 0" Text="In Progress..." FontSize="16" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+
+        </StackPanel>
+        
+    </Grid>
+</Window>
