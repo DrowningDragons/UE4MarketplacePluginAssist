@@ -61,13 +61,22 @@ namespace UE4MarketplacePluginAssist
     /// </summary>
     public partial class MainWindow : Window
     {
-        // app version 1.0.0
+        // app version 1.0.1
 
+        // ini files
         public int engineRootLine = -1;
         public int pluginLine = -1;
         public int outputLine = -1;
         public int zipLine = -1;
+
+        // config file
+        public int vsVersionLine = 0;
+
+        // cached vars
+        public bool initialized = false;
         public string engineVersion = "";
+        public string configFile = "";
+        public string vsVersion = "VS2019";
 
         public BackgroundWorker bw;
         private Process p;
@@ -101,6 +110,50 @@ namespace UE4MarketplacePluginAssist
                     }
                 }
             }
+            else
+            {
+                Directory.CreateDirectory(GetConfigDirectory());
+            }
+
+            // Global config file
+            if (Directory.Exists(GetConfigDirectory()))
+            {
+                string[] configFiles = Directory.GetFiles(GetConfigDirectory(), "*.config");
+                if (configFiles.Length > 0 && configFiles[0].EndsWith("config.config"))
+                {
+                    using (StreamReader sr = File.OpenText(configFiles[0]))
+                    {
+                        int line = 0;
+                        string s = "";
+                        while ((s = sr.ReadLine()) != null)
+                        {
+                            if (s.StartsWith("visualstudio="))
+                            {
+                                vsVersion = SplitString(s, "visualstudio=").Last();
+                                Text_VSVersion.Text = vsVersion;
+                            }
+                            line++;
+                        }
+                    }
+                }
+                else
+                {
+                    using (StreamWriter sw = File.CreateText(GetConfigDirectory() + "config.config"))
+                    {
+                        sw.WriteLine("visualstudio=VS2017");
+                    }
+                }
+            }
+            else
+            {
+                // No write access?
+                System.Environment.Exit(-2);
+                return;
+            }
+
+            initialized = true;
+
+            Debug.Write(GenerateBatchCommand());
         }
 
         private string GetBaseDirectory()
@@ -116,6 +169,10 @@ namespace UE4MarketplacePluginAssist
         private string GetIniPath()
         {
             return GetConfigDirectory() + engineVersion + ".ini";
+        }
+        private string GetConfigFilePath()
+        {
+            return GetConfigDirectory() + "config.config";
         }
 
         public string GetLogPath()
@@ -136,6 +193,11 @@ namespace UE4MarketplacePluginAssist
         private string GetPluginPath()
         {
             return Text_PluginRoot.Text;
+        }
+
+        private string GetVisualStudioVersion()
+        {
+            return Text_VSVersion.Text;
         }
 
         public string GetPluginDirectory()
@@ -173,7 +235,7 @@ namespace UE4MarketplacePluginAssist
 
         private string GenerateBatchCommand()
         {
-            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\"" + " -Rocket";
+            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\"" + " -" + vsVersion + " -Rocket";
         }
 
         private void Browse_EngineRoot_Click(object sender, RoutedEventArgs e)
@@ -436,6 +498,14 @@ namespace UE4MarketplacePluginAssist
             string[] arrLine = File.ReadAllLines(fileName);
             arrLine[line_to_edit] = newText;
             File.WriteAllLines(fileName, arrLine);
+        }
+
+        private void Text_VSVersion_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (initialized && File.Exists(GetConfigFilePath()))
+            {
+                changeTextLine("visualstudio=" + Text_VSVersion.Text, GetConfigFilePath(), vsVersionLine);
+            }
         }
 
         private void Text_EngineRoot_TextChanged(object sender, TextChangedEventArgs e)
