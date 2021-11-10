@@ -61,7 +61,14 @@ namespace UE4MarketplacePluginAssist
     /// </summary>
     public partial class MainWindow : Window
     {
-        // app version 1.0.1
+        /*
+         * app version 1.0.2
+         *      support for major engine versions above 4 (in preparation for UE5)
+         * app version 1.0.1
+         *      support for config.config with visual studio version setting
+         * app version 1.0.0
+         *      initial release
+         */
 
         // ini files
         public int engineRootLine = -1;
@@ -355,7 +362,7 @@ namespace UE4MarketplacePluginAssist
 
         public void ChangeEngineVersion(string newVersion, bool bRecursionTest = false)
         {
-            if(newVersion == engineVersion)
+            if (newVersion == engineVersion)
             {
                 // No change
                 return;

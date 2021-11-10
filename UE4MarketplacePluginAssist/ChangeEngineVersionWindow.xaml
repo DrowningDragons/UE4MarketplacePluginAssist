@@ -12,8 +12,7 @@
     <Grid>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock TextWrapping="Wrap" FontWeight="Bold" Text="4." Margin="10,0,0,0" Foreground="#f1f1f1"/>
-                <TextBox x:Name="Text_EngineVersion" FontWeight="Bold" Height="23" MaxLength="3" TextWrapping="Wrap" Text="25" Width="30" PreviewTextInput="EngineVersion_PreviewTextInput" Foreground="#f1f1f1" Background="#151515"/>
+                <TextBox x:Name="Text_EngineVersion" FontWeight="Bold" Height="23" MaxLength="3" TextWrapping="Wrap" Text="427" Width="30" PreviewTextInput="EngineVersion_PreviewTextInput" Foreground="#f1f1f1" Background="#151515"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                 <Button x:Name="Button_EngineVersionApply" HorizontalAlignment="Center" VerticalAlignment="Center" Content="Apply" Width="100" Height="30" Click="Button_EngineVersionApply_Click"/>
