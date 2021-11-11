@@ -12,7 +12,7 @@
     <Grid>
         <StackPanel Margin="10,25,10,0" Orientation="Vertical" HorizontalAlignment="Left">
             <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="UE4 Marketplace Plugin Assist" Foreground="#f1f1f1"/>
-            <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="Version 1.0.0 alpha" Foreground="#f1f1f1"/>
+            <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="Version 1.0.2" Foreground="#f1f1f1"/>
             <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="Copyright © 2020 Jared Taylor" Foreground="#f1f1f1"/>
             <TextBlock TextWrapping="Wrap" IsEnabled="False" Text="All Rights Reserved" Foreground="#f1f1f1"/>
             <TextBlock Margin="0,30,0,0" TextWrapping="Wrap" IsEnabled="False" Text="MIT License" Foreground="#f1f1f1"/>

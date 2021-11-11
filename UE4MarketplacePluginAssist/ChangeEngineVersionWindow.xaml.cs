@@ -78,5 +78,19 @@ namespace UE4MarketplacePluginAssist
 
             Close();
         }
+
+        private void Button_IncrEngine_Click(object sender, RoutedEventArgs e)
+        {
+            int v = int.Parse(Text_EngineVersion.Text);
+            v++;
+            Text_EngineVersion.Text = v.ToString();
+        }
+
+        private void Button_DecrEngine_Click(object sender, RoutedEventArgs e)
+        {
+            int v = int.Parse(Text_EngineVersion.Text);
+            v--;
+            Text_EngineVersion.Text = v.ToString();
+        }
     }
 }

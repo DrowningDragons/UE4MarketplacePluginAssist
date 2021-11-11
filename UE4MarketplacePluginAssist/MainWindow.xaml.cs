@@ -64,6 +64,7 @@ namespace UE4MarketplacePluginAssist
         /*
          * app version 1.0.2
          *      support for major engine versions above 4 (in preparation for UE5)
+         *      made engine version change UX better
          * app version 1.0.1
          *      support for config.config with visual studio version setting
          * app version 1.0.0
@@ -147,7 +148,7 @@ namespace UE4MarketplacePluginAssist
                 {
                     using (StreamWriter sw = File.CreateText(GetConfigDirectory() + "config.config"))
                     {
-                        sw.WriteLine("visualstudio=VS2017");
+                        sw.WriteLine("visualstudio=VS2019");
                     }
                 }
             }
