@@ -670,7 +670,6 @@ namespace UE4MarketplacePluginAssist
             Hide();
 
             FireUpBackgroundWorker();
-
         }
 
         // Background Worker

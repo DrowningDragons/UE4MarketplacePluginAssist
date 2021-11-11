@@ -239,7 +239,7 @@ namespace UE4MarketplacePluginAssist
                 string pluginName = mainWindow.GetPluginName();
                 string engineVersion = mainWindow.engineVersion;
 
-                string zipFile = zipPath + "\\" + pluginName + "_4" + engineVersion + ".zip";
+                string zipFile = zipPath + "\\" + pluginName + "_" + engineVersion + ".zip";
 
                 // Get binaries and intermediate ready to move
                 string pluginPath = mainWindow.GetPluginDirectory();

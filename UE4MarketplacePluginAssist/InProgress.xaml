@@ -26,8 +26,8 @@
                 <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Margin="0, 0, 0, 0" Text="Packaging " FontSize="16" TextAlignment="Center" />
                     <TextBlock x:Name="Text_Plugin" Margin="0, 0, 0, 0" Text="Plugin" FontSize="16" TextAlignment="Center" />
-                    <TextBlock Margin="0, 0, 0, 0" Text=" [4." FontSize="16" TextAlignment="Center" />
-                    <TextBlock x:Name="Text_Version" Margin="0, 0, 0, 0" Text="22" FontSize="16" TextAlignment="Center" />
+                    <TextBlock Margin="0, 0, 0, 0" Text=" [" FontSize="16" TextAlignment="Center" />
+                    <TextBlock x:Name="Text_Version" Margin="0, 0, 0, 0" Text="4.26" FontSize="16" TextAlignment="Center" />
                     <TextBlock Margin="0, 0, 0, 0" Text="] " FontSize="16" TextAlignment="Center" />
                     <TextBlock x:Name="Text_Status" Margin="0, 0, 0, 0" Text="In Progress..." FontSize="16" TextAlignment="Center" />
                 </StackPanel>
