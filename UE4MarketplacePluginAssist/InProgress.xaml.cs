@@ -3,17 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using static System.Windows.Media.ColorConverter;
 
 namespace UE4MarketplacePluginAssist
 {
@@ -25,15 +17,15 @@ namespace UE4MarketplacePluginAssist
 
     public struct ParseResult
     {
-        public ParseResultType Type;
-        public string Message;
-        public int Line;
+        public readonly ParseResultType type;
+        public readonly string message;
+        public readonly int line;
 
         public ParseResult(ParseResultType type, string message, int line)
         {
-            Type = type;
-            Message = message;
-            Line = line;
+            this.type = type;
+            this.message = message;
+            this.line = line;
         }
     }
 
@@ -45,18 +37,18 @@ namespace UE4MarketplacePluginAssist
         public MainWindow mainWindow;
         public bool bZip;
 
-        private string logPath;
-        private string logFile;
+        private string _logPath;
+        private string _logFile;
 
-        List<ParseResult> parsed;
+        private List<ParseResult> _parsed;
 
-        private ViewDialog warningDialog;
-        private ViewDialog errorDialog;
+        private ViewDialog _warningDialog;
+        private ViewDialog _errorDialog;
 
-        private bool bCompleted = false;
+        private bool _bCompleted = false;
 
-        private static string[] SafeErrorWords = { "Running UnrealHeaderTool" };
-        private static string[] SafeWarningWords = { "Running UnrealHeaderTool" };
+        private static readonly string[] SafeErrorWords = { "Running UnrealHeaderTool" };
+        private static readonly string[] SafeWarningWords = { "Running UnrealHeaderTool" };
 
         public InProgress()
         {
@@ -70,18 +62,18 @@ namespace UE4MarketplacePluginAssist
 
         private void Button_Abort_Click(object sender, RoutedEventArgs e)
         {
-            if (mainWindow.bw.IsBusy && !bCompleted && mainWindow.progress == this)
+            if (mainWindow.bw.IsBusy && !_bCompleted && mainWindow.progress == this)
             {
-                bCompleted = true;
+                _bCompleted = true;
                 mainWindow.CancelBackgroundWorker();
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (!bCompleted && mainWindow.progress == this)
+            if (!_bCompleted && mainWindow.progress == this)
             {
-                bCompleted = true;
+                _bCompleted = true;
                 mainWindow.CancelBackgroundWorker();
             }
 
@@ -103,21 +95,35 @@ namespace UE4MarketplacePluginAssist
             return stream;
         }
 
+        private bool CheckZipPath(DirectoryInfo dir, string testDir, string preText, bool bTest = false)
+        {
+            if (dir != null && !bTest)
+            {
+                return true;
+            }
+            
+            var mBoxError = preText + " [ " + testDir +
+                            " ] has null parent. Zip aborted.";
+            MessageBox.Show(this, mBoxError);
+            
+            return false;
+        }
+
         public void Completed(string result)
         {
-            bCompleted = true;
+            _bCompleted = true;
             Button_Abort.IsEnabled = false;
 
             // Convert string to a stream for parsing
             Stream stream = ConvertStringToStream(result);
 
-            logPath = mainWindow.GetLogPath();
+            _logPath = mainWindow.GetLogPath();
 
-            if (!Directory.Exists(logPath))
+            if (!Directory.Exists(_logPath))
             {
-                Directory.CreateDirectory(logPath);
+                Directory.CreateDirectory(_logPath);
 
-                if (!Directory.Exists(logPath))
+                if (!Directory.Exists(_logPath))
                 {
                     throw new Exception("Could not create log directory");
                 }
@@ -126,20 +132,20 @@ namespace UE4MarketplacePluginAssist
             Button_OpenLog.IsEnabled = true;
 
             // Write output log first
-            logFile = mainWindow.GetLogFile();
-            File.WriteAllText(logFile, result);
+            _logFile = mainWindow.GetLogFile();
+            File.WriteAllText(_logFile, result);
 
             // Update final result
             bool bSuccess = result.Contains("BUILD SUCCESSFUL");
             if (bSuccess)
             {
                 Text_Status.Text = "Successful";
-                Border_Status.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7af366"));
+                Border_Status.Background = new SolidColorBrush((Color)ConvertFromString("#7af366"));
             }
             else
             {
                 Text_Status.Text = "Failed";
-                Border_Status.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF0000"));
+                Border_Status.Background = new SolidColorBrush((Color)ConvertFromString("#FF0000"));
             }
             Spinner_Progress.Visibility = Visibility.Hidden;
 
@@ -148,7 +154,7 @@ namespace UE4MarketplacePluginAssist
                 return;
             }
 
-            parsed = new List<ParseResult>();
+            _parsed = new List<ParseResult>();
 
             // Parse result stream
             using (StreamReader sr = new StreamReader(stream))
@@ -172,7 +178,7 @@ namespace UE4MarketplacePluginAssist
 
                         if (!bSafe)
                         {
-                            parsed.Add(new ParseResult(ParseResultType.Error, s, line));
+                            _parsed.Add(new ParseResult(ParseResultType.Error, s, line));
                         }
                     }
                     else if (s.Contains("warning"))
@@ -190,7 +196,7 @@ namespace UE4MarketplacePluginAssist
 
                         if (!bSafe)
                         {
-                            parsed.Add(new ParseResult(ParseResultType.Warning, s, line));
+                            _parsed.Add(new ParseResult(ParseResultType.Warning, s, line));
                         }
                     }
 
@@ -198,14 +204,14 @@ namespace UE4MarketplacePluginAssist
                 }
             }
 
-            if(parsed.Count > 0)
+            if(_parsed.Count > 0)
             {
                 int numErrors = 0;
                 int numWarnings = 0;
 
-                foreach(ParseResult r in parsed)
+                foreach(ParseResult r in _parsed)
                 {
-                    switch (r.Type)
+                    switch (r.type)
                     {
                         case ParseResultType.Error:
                             numErrors++;
@@ -235,20 +241,31 @@ namespace UE4MarketplacePluginAssist
             if (bZip && bSuccess)
             {
                 // Determine zip file
-                string zipPath = Directory.GetParent(Directory.GetParent(mainWindow.GetPluginDirectory()).FullName).FullName;
+                DirectoryInfo pluginDir = Directory.GetParent(mainWindow.GetPluginDirectory());
+                if (!CheckZipPath(pluginDir, mainWindow.GetPluginDirectory(), "PluginDirectory"))
+                {
+                    return;
+                }
+
+                string testDir = pluginDir.FullName;
+                pluginDir = Directory.GetParent(pluginDir.FullName);
+                if (!CheckZipPath(pluginDir, testDir, "PluginDirectoryParent"))
+                {
+                    return;
+                }
+                
+                string zipPath = pluginDir.FullName;
                 string pluginName = mainWindow.GetPluginName();
                 string engineVersion = mainWindow.engineVersion;
 
                 string zipFile = zipPath + "\\" + pluginName + "_" + engineVersion + ".zip";
 
                 // Get binaries and intermediate ready to move
-                string pluginPath = mainWindow.GetPluginDirectory();
+                string binariesSrc = mainWindow.GetPluginDirectory() + "Binaries\\";
+                string intermediateSrc = mainWindow.GetPluginDirectory() + "Intermediate\\";
 
-                string binariesSrc = pluginPath + "Binaries\\";
-                string intermediateSrc = pluginPath + "Intermediate\\";
-
-                string binariesTgt = Directory.GetParent(Directory.GetParent(pluginPath).FullName).FullName + "\\Binaries\\";
-                string intermediateTgt = Directory.GetParent(Directory.GetParent(pluginPath).FullName).FullName + "\\Intermediate\\";
+                string binariesTgt = pluginDir.FullName + "\\Binaries\\";
+                string intermediateTgt = pluginDir.FullName + "\\Intermediate\\";
 
                 // Move binaries and intermediate out in preparation to zip the plugin
                 if (Directory.Exists(binariesSrc))
@@ -269,10 +286,25 @@ namespace UE4MarketplacePluginAssist
                 // Zip the plugin
                 if (File.Exists(zipFile))
                 {
+                    // Delete pre-existing zip file
                     File.Delete(zipFile);
                 }
 
-                ZipFile.CreateFromDirectory(pluginPath, zipFile);
+                try
+                {
+                    ZipFile.CreateFromDirectory(mainWindow.GetPluginDirectory(), zipFile);
+                }
+                catch (Exception ex)
+                {
+                    var mBoxError = "Zip file could not be created: " + ex.Message.ToString() + " Zip aborted.";
+                    MessageBox.Show(this, mBoxError);
+                    return;
+                }
+                if (!File.Exists(zipFile))
+                {
+                    MessageBox.Show(this, "Zip file could not be created: Unknown error. Zip aborted.");
+                    return;
+                }
                 
                 // Test the file size for completion
                 FileInfo fi = new FileInfo(zipFile);
@@ -299,7 +331,15 @@ namespace UE4MarketplacePluginAssist
                 }
 
                 // Open the directory
-                Process.Start(fi.DirectoryName);
+                if (Directory.Exists(fi.DirectoryName))
+                {
+                    Process.Start(fi.DirectoryName);
+                }
+                else
+                {
+                    var mBoxError = "Zip file directory does not exist: " + fi.DirectoryName + " - Zip completed but error in opening the directory location.";
+                    MessageBox.Show(this, mBoxError);
+                }
             }
 
             mainWindow.Check_Waiting_Progress();
@@ -307,57 +347,57 @@ namespace UE4MarketplacePluginAssist
 
         private void Button_OpenLog_Click(object sender, RoutedEventArgs e)
         {
-            if (File.Exists(logFile))
+            if (File.Exists(_logFile))
             {
-                Process.Start(logFile);
+                Process.Start(_logFile);
             }
             else
             {
-                System.Windows.MessageBox.Show(this, "Log file not found");
+                MessageBox.Show(this, "Log file not found");
             }
         }
 
         private void Button_ViewWarnings_Click(object sender, RoutedEventArgs e)
         {
-            if(warningDialog != null)
+            if(_warningDialog != null)
             {
-                if (warningDialog.IsActive)
+                if (_warningDialog.IsActive)
                 {
-                    warningDialog.Hide();
+                    _warningDialog.Hide();
                 }
                 else
                 {
-                    warningDialog.Show();
+                    _warningDialog.Show();
                 }
             }
             else
             {
-                warningDialog = new ViewDialog();
-                warningDialog.Title = "Warnings";
-                warningDialog.InitParseResults(parsed, ParseResultType.Warning);
-                warningDialog.Show();
+                _warningDialog = new ViewDialog();
+                _warningDialog.Title = "Warnings";
+                _warningDialog.InitParseResults(_parsed, ParseResultType.Warning);
+                _warningDialog.Show();
             }
         }
 
         private void Button_ViewErrors_Click(object sender, RoutedEventArgs e)
         {
-            if (errorDialog != null)
+            if (_errorDialog != null)
             {
-                if (errorDialog.IsActive)
+                if (_errorDialog.IsActive)
                 {
-                    errorDialog.Hide();
+                    _errorDialog.Hide();
                 }
                 else
                 {
-                    errorDialog.Show();
+                    _errorDialog.Show();
                 }
             }
             else
             {
-                errorDialog = new ViewDialog();
-                errorDialog.Title = "Errors";
-                errorDialog.InitParseResults(parsed, ParseResultType.Error);
-                errorDialog.Show();
+                _errorDialog = new ViewDialog();
+                _errorDialog.Title = "Errors";
+                _errorDialog.InitParseResults(_parsed, ParseResultType.Error);
+                _errorDialog.Show();
             }
         }
     }

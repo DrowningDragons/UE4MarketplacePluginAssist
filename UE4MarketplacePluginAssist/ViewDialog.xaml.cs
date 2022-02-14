@@ -1,16 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace UE4MarketplacePluginAssist
 {
@@ -19,7 +9,7 @@ namespace UE4MarketplacePluginAssist
     /// </summary>
     public partial class ViewDialog : Window
     {
-        public List<ParseResult> result = new List<ParseResult>();
+        private readonly List<ParseResult> _result = new List<ParseResult>();
 
         public ViewDialog()
         {
@@ -28,18 +18,18 @@ namespace UE4MarketplacePluginAssist
 
         public void InitParseResults(List<ParseResult> results, ParseResultType viewType)
         {
-            result.Clear();
+            _result.Clear();
 
             foreach (ParseResult r in results)
             {
-                if (r.Type == viewType)
+                if (r.type == viewType)
                 {
-                    result.Add(r);
+                    _result.Add(r);
                 }
             }
 
-            string count = result.Count.ToString();
-            if (result.Count <= 1)
+            string count = _result.Count.ToString();
+            if (_result.Count <= 1)
             {
                 Button_Prev.IsEnabled = false;
                 Button_Next.IsEnabled = false;
@@ -62,22 +52,22 @@ namespace UE4MarketplacePluginAssist
 
         private void SetCurrent(int current)
         {
-            if(result == null || result.Count == 0)
+            if(_result == null || _result.Count == 0)
             {
                 return;
             }
 
             // Clamp current
             current = Math.Max(1, current);
-            current = Math.Min(result.Count, current);
+            current = Math.Min(_result.Count, current);
 
             Text_Current.Text = current.ToString();
 
             Button_Prev.IsEnabled = (current != 1);
-            Button_Next.IsEnabled = (current != result.Count);
+            Button_Next.IsEnabled = (current != _result.Count);
 
-            Text_LineNumber.Text = result[current - 1].Line.ToString();
-            Text_Message.Text = result[current - 1].Message;
+            Text_LineNumber.Text = _result[current - 1].line.ToString();
+            Text_Message.Text = _result[current - 1].message;
         }
 
         private void Button_Next_Click(object sender, RoutedEventArgs e)

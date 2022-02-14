@@ -24,35 +24,25 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using Microsoft.Win32;
 using Ookii.Dialogs.Wpf;
 using System.Threading;
 using System.ComponentModel;
+using MessageBox = System.Windows.MessageBox;
 
 namespace UE4MarketplacePluginAssist
 {
     public struct WaitingProgress
     {
-        public InProgress Progress;
-        public string EngineVersion;
+        public readonly InProgress progress;
+        public readonly string engineVersion;
 
         public WaitingProgress(InProgress progress, string engineVersion)
         {
-            Progress = progress;
-            EngineVersion = engineVersion;
+            this.progress = progress;
+            this.engineVersion = engineVersion;
         }
     }
 
@@ -62,6 +52,13 @@ namespace UE4MarketplacePluginAssist
     public partial class MainWindow : Window
     {
         /*
+         * app version 1.0.4
+         *      error checking for zip functionality
+         *      removed unnecessary 'using' statements
+         *      modified variables to fit standards better
+         *      modified variable access modifiers
+         * app version 1.0.3
+         *      fixed issues with versions
          * app version 1.0.2
          *      support for major engine versions above 4 (in preparation for UE5)
          *      made engine version change UX better
@@ -72,27 +69,27 @@ namespace UE4MarketplacePluginAssist
          */
 
         // ini files
-        public int engineRootLine = -1;
-        public int pluginLine = -1;
-        public int outputLine = -1;
-        public int zipLine = -1;
+        private int _engineRootLine = -1;
+        private int _pluginLine = -1;
+        private int _outputLine = -1;
+        private int _zipLine = -1;
 
         // config file
-        public int vsVersionLine = 0;
+        private const int VsVersionLine = 0;
 
         // cached vars
-        public bool initialized = false;
+        private readonly bool _initialized = false;
         public string engineVersion = "";
         public string configFile = "";
-        public string vsVersion = "VS2019";
+        private readonly string _vsVersion = "VS2019";
 
         public BackgroundWorker bw;
-        private Process p;
+        private Process _p;
         public Thread processThread;
         public CancellationTokenSource cts;
         public InProgress progress;
 
-        public List<WaitingProgress> waiting_progress = new List<WaitingProgress>();
+        private readonly List<WaitingProgress> _waitingProgress = new List<WaitingProgress>();
 
         public MainWindow()
         {
@@ -131,16 +128,14 @@ namespace UE4MarketplacePluginAssist
                 {
                     using (StreamReader sr = File.OpenText(configFiles[0]))
                     {
-                        int line = 0;
                         string s = "";
                         while ((s = sr.ReadLine()) != null)
                         {
                             if (s.StartsWith("visualstudio="))
                             {
-                                vsVersion = SplitString(s, "visualstudio=").Last();
-                                Text_VSVersion.Text = vsVersion;
+                                _vsVersion = SplitString(s, "visualstudio=").Last();
+                                Text_VSVersion.Text = _vsVersion;
                             }
-                            line++;
                         }
                     }
                 }
@@ -159,7 +154,7 @@ namespace UE4MarketplacePluginAssist
                 return;
             }
 
-            initialized = true;
+            _initialized = true;
 
             Debug.Write(GenerateBatchCommand());
         }
@@ -230,7 +225,7 @@ namespace UE4MarketplacePluginAssist
             return Text_Output.Text;
         }
 
-        private string[] SplitString(string s, string separator)
+        private static string[] SplitString(string s, string separator)
         {
             return s.Split(new string[] { separator }, StringSplitOptions.None);
         }
@@ -243,7 +238,7 @@ namespace UE4MarketplacePluginAssist
 
         private string GenerateBatchCommand()
         {
-            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\"" + " -" + vsVersion + " -Rocket";
+            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\"" + " -" + _vsVersion + " -Rocket";
         }
 
         private void Browse_EngineRoot_Click(object sender, RoutedEventArgs e)
@@ -260,7 +255,7 @@ namespace UE4MarketplacePluginAssist
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(this, "Invalid directory, should contain \"Engine\" folder");
+                    MessageBox.Show(this, "Invalid directory, should contain \"Engine\" folder");
                 }
             }
         }
@@ -279,7 +274,7 @@ namespace UE4MarketplacePluginAssist
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(this, "Invalid directory");
+                    MessageBox.Show(this, "Invalid directory");
                 }
             }
         }
@@ -301,7 +296,7 @@ namespace UE4MarketplacePluginAssist
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(this, "Invalid file");
+                    MessageBox.Show(this, "Invalid file");
                 }
             }
         }
@@ -320,17 +315,17 @@ namespace UE4MarketplacePluginAssist
             engineVersionWindow.ShowDialog();
         }
 
-        private bool IsEngineValid(string enginePath)
+        private static bool IsEngineValid(string enginePath)
         {
             return Directory.Exists(enginePath + "\\Engine");
         }
 
-        private bool IsOutputValid(string outputPath)
+        private static bool IsOutputValid(string outputPath)
         {
             return Directory.Exists(outputPath);
         }
 
-        private bool IsPluginValid(string pluginPath)
+        private static bool IsPluginValid(string pluginPath)
         {
             return (File.Exists(pluginPath));
         }
@@ -350,14 +345,7 @@ namespace UE4MarketplacePluginAssist
             if (bValidOutput)
             {
                 bool bOutputEmpty = Directory.GetDirectories(GetOutputPath()).Length == 0 || Directory.GetFiles(GetOutputPath()).Length == 0;
-                if (bOutputEmpty)
-                {
-                    Text_OutputWarning.Visibility = Visibility.Hidden;
-                }
-                else
-                {
-                    Text_OutputWarning.Visibility = Visibility.Visible;
-                }
+                Text_OutputWarning.Visibility = bOutputEmpty ? Visibility.Hidden : Visibility.Visible;
             }
         }
 
@@ -440,25 +428,25 @@ namespace UE4MarketplacePluginAssist
                     if (s.StartsWith("engineroot="))
                     {
                         engineRoot = SplitString(s, "engineroot=").Last();
-                        engineRootLine = line;
+                        _engineRootLine = line;
                         bEngineRootFound = true;
                     }
                     else if (s.StartsWith("plugin="))
                     {
                         plugin = SplitString(s, "plugin=").Last();
-                        pluginLine = line;
+                        _pluginLine = line;
                         bPluginFound = true;
                     }
                     else if (s.StartsWith("output="))
                     {
                         output = SplitString(s, "output=").Last();
-                        outputLine = line;
+                        _outputLine = line;
                         bOutputFound = true;
                     }
                     else if (s.StartsWith("zip="))
                     {
                         zip = SplitString(s, "zip=").Last();
-                        zipLine = line;
+                        _zipLine = line;
                         bZipFound = true;
                     }
                     line++;
@@ -501,53 +489,53 @@ namespace UE4MarketplacePluginAssist
             ValidateDirectories();
         }
 
-        static void changeTextLine(string newText, string fileName, int line_to_edit)
+        private static void ChangeTextLine(string newText, string fileName, int lineToEdit)
         {
             string[] arrLine = File.ReadAllLines(fileName);
-            arrLine[line_to_edit] = newText;
+            arrLine[lineToEdit] = newText;
             File.WriteAllLines(fileName, arrLine);
         }
 
         private void Text_VSVersion_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (initialized && File.Exists(GetConfigFilePath()))
+            if (_initialized && File.Exists(GetConfigFilePath()))
             {
-                changeTextLine("visualstudio=" + Text_VSVersion.Text, GetConfigFilePath(), vsVersionLine);
+                ChangeTextLine("visualstudio=" + Text_VSVersion.Text, GetConfigFilePath(), VsVersionLine);
             }
         }
 
         private void Text_EngineRoot_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (engineRootLine < 0) 
+            if (_engineRootLine < 0) 
             {
                 throw new Exception("EngineRootLine not initialized");
             }
 
-            changeTextLine("engineroot=" + Text_EngineRoot.Text, GetIniPath(), engineRootLine);
+            ChangeTextLine("engineroot=" + Text_EngineRoot.Text, GetIniPath(), _engineRootLine);
 
             ValidateDirectories();
         }
 
         private void Text_PluginRoot_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (pluginLine < 0)
+            if (_pluginLine < 0)
             {
                 throw new Exception("PluginLine not initialized");
             }
 
-            changeTextLine("plugin=" + Text_PluginRoot.Text, GetIniPath(), pluginLine);
+            ChangeTextLine("plugin=" + Text_PluginRoot.Text, GetIniPath(), _pluginLine);
 
             ValidateDirectories();
         }
 
         private void Text_Output_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (outputLine < 0)
+            if (_outputLine < 0)
             {
                 throw new Exception("OutputLine not initialized");
             }
 
-            changeTextLine("output=" + Text_Output.Text, GetIniPath(), outputLine);
+            ChangeTextLine("output=" + Text_Output.Text, GetIniPath(), _outputLine);
 
             ValidateDirectories();
         }
@@ -559,12 +547,12 @@ namespace UE4MarketplacePluginAssist
                 return;
             }
 
-            if (zipLine < 0)
+            if (_zipLine < 0)
             {
                 throw new Exception("ZipLine not initialized");
             }
 
-            changeTextLine("zip=" + Check_Zip.IsChecked.ToString(), GetIniPath(), zipLine);
+            ChangeTextLine("zip=" + Check_Zip.IsChecked.ToString(), GetIniPath(), _zipLine);
         }
 
         public void Check_Waiting_Progress()
@@ -572,14 +560,14 @@ namespace UE4MarketplacePluginAssist
             if (!bw.IsBusy)
             {
                 // Remove completed progress
-                if (progress != null && waiting_progress.Count > 0)
+                if (progress != null && _waitingProgress.Count > 0)
                 {
-                    WaitingProgress pr = waiting_progress[0];
+                    WaitingProgress pr = _waitingProgress[0];
                     bool bFoundRemoval = false;
-                    for (int i = 0; i < waiting_progress.Count; i++)
+                    for (int i = 0; i < _waitingProgress.Count; i++)
                     {
-                        pr = waiting_progress[i];
-                        if (progress == pr.Progress)
+                        pr = _waitingProgress[i];
+                        if (progress == pr.progress)
                         {
                             bFoundRemoval = true;
                             break;
@@ -588,18 +576,18 @@ namespace UE4MarketplacePluginAssist
 
                     if (bFoundRemoval)
                     {
-                        waiting_progress.Remove(pr);
+                        _waitingProgress.Remove(pr);
                     }
                 }
 
                 // Begin next progress
-                if (waiting_progress.Count > 0)
+                if (_waitingProgress.Count > 0)
                 {
-                    progress = waiting_progress.First().Progress;
+                    progress = _waitingProgress.First().progress;
                     progress.Show();
                     Hide();
 
-                    LoadEngineVersion(waiting_progress.First().EngineVersion, false);
+                    LoadEngineVersion(_waitingProgress.First().engineVersion, false);
 
                     FireUpBackgroundWorker();
                 }
@@ -608,7 +596,7 @@ namespace UE4MarketplacePluginAssist
 
         private void Button_StartAll_Click(object sender, RoutedEventArgs e)
         {
-            waiting_progress.Clear();
+            _waitingProgress.Clear();
 
             // Find each valid ini
             if (Directory.Exists(GetConfigDirectory()))
@@ -637,7 +625,7 @@ namespace UE4MarketplacePluginAssist
                             newProgress.Text_Version.Text = engineVersion;
                             newProgress.bZip = Check_Zip.IsChecked.Value;
 
-                            waiting_progress.Add(new WaitingProgress(newProgress, fileVersion));
+                            _waitingProgress.Add(new WaitingProgress(newProgress, fileVersion));
                         }
                     }
                 }
@@ -688,35 +676,35 @@ namespace UE4MarketplacePluginAssist
         {
             bw.CancelAsync();
 
-            if (!p.HasExited)
+            if (!_p.HasExited)
             {
-                p.CloseMainWindow();
+                _p.CloseMainWindow();
             }
         }
 
         private void BW_DoWork(object sender, DoWorkEventArgs e)
         {
             // Start child process
-            p = new Process();
+            _p = new Process();
 
             // Redirect output stream
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            p.StartInfo.FileName = "cmd.exe";
-            p.StartInfo.Arguments = e.Argument.ToString();
-            bool ret = p.Start();
+            _p.StartInfo.UseShellExecute = false;
+            _p.StartInfo.RedirectStandardOutput = true;
+            _p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            _p.StartInfo.FileName = "cmd.exe";
+            _p.StartInfo.Arguments = e.Argument.ToString();
+            bool ret = _p.Start();
 
-            e.Result = p.StandardOutput.ReadToEnd();
+            e.Result = _p.StandardOutput.ReadToEnd();
 
-            p.WaitForExit();
+            _p.WaitForExit();
         }
 
         private void BW_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (!p.HasExited)
+            if (!_p.HasExited)
             {
-                p.CloseMainWindow();
+                _p.CloseMainWindow();
             }
 
             string result = e.Result.ToString();
