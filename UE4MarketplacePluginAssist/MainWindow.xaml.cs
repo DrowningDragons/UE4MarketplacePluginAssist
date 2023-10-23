@@ -53,6 +53,8 @@ namespace UE4MarketplacePluginAssist
     public partial class MainWindow : Window
     {
         /*
+         * app version 1.1.1
+         *      Copy over FilterPlugin.ini
          * app version 1.1.0
          *      510 is now default engine version
          *      VS2022 is now default version

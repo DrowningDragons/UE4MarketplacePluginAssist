@@ -15,6 +15,9 @@ Every update is compiled for Windows already. You can download them here: https:
 
 # Changelog
 
+## Version 1.1.1
+* Copy over FilterPlugin.ini
+
 ## Version 1.1.0
 * 510 is now default engine version
 * VS2022 is now default version

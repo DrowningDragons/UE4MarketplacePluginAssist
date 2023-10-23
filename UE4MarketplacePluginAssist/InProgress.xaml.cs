@@ -252,6 +252,35 @@ namespace UE4MarketplacePluginAssist
                 }
             }
 
+            // Copy over the FilterPlugin.ini
+            if (bSuccess)
+            {
+                DirectoryInfo resultDir = new DirectoryInfo(mainWindow.GetPackagedPath());
+                string configDir = resultDir.FullName + "\\Config";
+                if (!Directory.Exists(configDir))
+                {
+                    configDir = Directory.CreateDirectory(configDir).FullName;
+                }
+
+                if (Directory.Exists(configDir))
+                {
+                    string filterPluginSrc = mainWindow.GetPluginDirectory() + "Config\\FilterPlugin.ini";
+                    string filterPluginTgt = configDir + "\\FilterPlugin.ini";
+                    if (File.Exists(filterPluginSrc))
+                    {
+                        File.Copy(filterPluginSrc, filterPluginTgt);
+                    }
+                    else
+                    {
+                        MessageBox.Show(this, "FilterPlugin.ini not found! FilterPlugin.ini was not copied over.");
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(this, "Unable to create Config directory! FilterPlugin.ini was not copied over.");
+                }
+            }
+
             // Change the .uplugin version based on the engine that packaged it
             if (bUProjectEngineVersion && bSuccess)
             {
