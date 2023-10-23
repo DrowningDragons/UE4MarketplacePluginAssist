@@ -1,5 +1,7 @@
 # UE4MarketplacePluginAssist
 
+*Works with UE5*
+
 If you have a code plugin on the marketplace then you probably want this.
 
 This is a C# Application that makes it easy to build, validate, and zip your plugins ready for distribution.
