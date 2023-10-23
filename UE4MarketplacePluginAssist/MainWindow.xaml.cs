@@ -60,8 +60,8 @@ namespace UE4MarketplacePluginAssist
          *      Added option to resave any unversioned packages (-run=ResavePackages -OnlyUnversioned)
          *      Instead of packing directly to the given directory, will create subdirectory for each engine version
          *      Zip file now gets created in the output directory instead of the plugin directory
-         *      Added check for directory being cleared successfully
-         *      Fixed bug where wrong directly was zipped (you will no longer get .git files)
+         *      Added check for output directory being cleared successfully
+         *      Fixed bug where wrong directory was zipped (you will no longer get .git files)
          *      Fixed bug where data validation incorrectly allowed checkboxes to be enabled
          * app version 1.0.4
          *      error checking for zip functionality
