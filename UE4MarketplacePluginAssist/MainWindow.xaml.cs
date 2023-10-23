@@ -31,6 +31,7 @@ using Ookii.Dialogs.Wpf;
 using System.Threading;
 using System.ComponentModel;
 using MessageBox = System.Windows.MessageBox;
+using System.IO.Compression;
 
 namespace UE4MarketplacePluginAssist
 {
@@ -52,6 +53,16 @@ namespace UE4MarketplacePluginAssist
     public partial class MainWindow : Window
     {
         /*
+         * app version 1.1.0
+         *      510 is now default engine version
+         *      VS2022 is now default version
+         *      Added ability to modify your .uproject engine version (the digits get split, 510➜5.1.0)
+         *      Added option to resave any unversioned packages (-run=ResavePackages -OnlyUnversioned)
+         *      Instead of packing directly to the given directory, will create subdirectory for each engine version
+         *      Zip file now gets created in the output directory instead of the plugin directory
+         *      Added check for directory being cleared successfully
+         *      Fixed bug where wrong directly was zipped (you will no longer get .git files)
+         *      Fixed bug where data validation incorrectly allowed checkboxes to be enabled
          * app version 1.0.4
          *      error checking for zip functionality
          *      removed unnecessary 'using' statements
@@ -68,11 +79,17 @@ namespace UE4MarketplacePluginAssist
          *      initial release
          */
 
+        // defaults (these still need to be changed in GUI manually)
+        public string defaultEngineVersion = "510";
+        private readonly string vsDefaultVersion = "VS2022";
+
         // ini files
         private int _engineRootLine = -1;
         private int _pluginLine = -1;
         private int _outputLine = -1;
         private int _zipLine = -1;
+        private int _pluginEngineLine = -1;
+        private int _saveUnversionedLine = -1;
 
         // config file
         private const int VsVersionLine = 0;
@@ -81,7 +98,7 @@ namespace UE4MarketplacePluginAssist
         private readonly bool _initialized = false;
         public string engineVersion = "";
         public string configFile = "";
-        private readonly string _vsVersion = "VS2019";
+        private readonly string _vsVersion = "";
 
         public BackgroundWorker bw;
         private Process _p;
@@ -143,7 +160,7 @@ namespace UE4MarketplacePluginAssist
                 {
                     using (StreamWriter sw = File.CreateText(GetConfigDirectory() + "config.config"))
                     {
-                        sw.WriteLine("visualstudio=VS2019");
+                        sw.WriteLine("visualstudio=" + vsDefaultVersion);
                     }
                 }
             }
@@ -225,7 +242,17 @@ namespace UE4MarketplacePluginAssist
             return Text_Output.Text;
         }
 
-        private static string[] SplitString(string s, string separator)
+        public string GetPackagedPath()
+        {
+            return GetOutputPath() + "\\" + engineVersion;
+        }
+
+        public string GetZipPath()
+        {
+            return GetPackagedPath();
+        }
+
+        public static string[] SplitString(string s, string separator)
         {
             return s.Split(new string[] { separator }, StringSplitOptions.None);
         }
@@ -238,7 +265,12 @@ namespace UE4MarketplacePluginAssist
 
         private string GenerateBatchCommand()
         {
-            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\"" + " -" + _vsVersion + " -Rocket";
+            return "\"" + GetEngineRootPath() + "\\Engine\\Build\\BatchFiles\\RunUAT.bat\"" + " BuildPlugin " + "-Plugin=\"" + GetPluginPath() + "\" " + "-Package=\"" + GetOutputPath() + "\\" + engineVersion + "\"" + " -" + _vsVersion + " -Rocket";
+        }
+
+        public string GenerateSaveUnversionedCommand()
+        {
+            return "\"" + GetEngineRootPath() + "\\Engine\\Binaries\\Win64\\UnrealEditor-Cmd.exe\" \"" + GetPluginPath() + GetPluginName() + "\" -run=ResavePackages -OnlyUnversioned";
         }
 
         private void Browse_EngineRoot_Click(object sender, RoutedEventArgs e)
@@ -386,6 +418,8 @@ namespace UE4MarketplacePluginAssist
                     sw.WriteLine("plugin=");
                     sw.WriteLine("output=");
                     sw.WriteLine("zip=True");
+                    sw.WriteLine("upluginengine=False");
+                    sw.WriteLine("saveunversioned=False");
                 }
             }
 
@@ -413,10 +447,14 @@ namespace UE4MarketplacePluginAssist
             string plugin = "";
             string output = "";
             string zip = "";
+            string upluginengine = "";
+            string saveunversioned = "";
             bool bEngineRootFound = false;
             bool bPluginFound = false;
             bool bOutputFound = false;
             bool bZipFound = false;
+            bool bUpluginEngineFound = false;
+            bool bSaveUnversionedFound = false;
 
             // Find corresponding paths in .ini file
             using (StreamReader sr = File.OpenText(filePath))
@@ -449,12 +487,24 @@ namespace UE4MarketplacePluginAssist
                         _zipLine = line;
                         bZipFound = true;
                     }
+                    else if (s.StartsWith("upluginengine="))
+                    {
+                        upluginengine = SplitString(s, "upluginengine=").Last();
+                        _pluginEngineLine = line;
+                        bUpluginEngineFound = true;
+                    }
+                    else if (s.StartsWith("saveunversioned="))
+                    {
+                        saveunversioned = SplitString(s, "saveunversioned=").Last();
+                        _saveUnversionedLine = line;
+                        bSaveUnversionedFound = true;
+                    }
                     line++;
                 }
             }
 
             // Verify both paths were found, otherwise remake the file (only once; see bRecursionTest)
-            if (!bEngineRootFound || !bPluginFound || !bOutputFound || !bZipFound)
+            if (!bEngineRootFound || !bPluginFound || !bOutputFound || !bZipFound || !bUpluginEngineFound || !bSaveUnversionedFound)
             {
                 if (bRecursionTest)
                 {
@@ -464,6 +514,7 @@ namespace UE4MarketplacePluginAssist
                 {
                     File.Delete(filePath);
                     ChangeEngineVersion(newVersion, true);
+                    return;
                 }
             }
 
@@ -486,10 +537,18 @@ namespace UE4MarketplacePluginAssist
             Check_Zip.IsEnabled = true;
             Check_Zip.IsChecked = zip.Equals("True") ? true : false;
 
+            // Load and set uplugin engine version
+            ChangeUPlugin.IsEnabled = true;
+            ChangeUPlugin.IsChecked = upluginengine.Equals("True") ? true : false;
+
+            // Load and set save unversioned
+            SavedUnversioned.IsEnabled = true;
+            SavedUnversioned.IsChecked = saveunversioned.Equals("True") ? true : false;
+
             ValidateDirectories();
         }
 
-        private static void ChangeTextLine(string newText, string fileName, int lineToEdit)
+        public static void ChangeTextLine(string newText, string fileName, int lineToEdit)
         {
             string[] arrLine = File.ReadAllLines(fileName);
             arrLine[lineToEdit] = newText;
@@ -555,6 +614,70 @@ namespace UE4MarketplacePluginAssist
             ChangeTextLine("zip=" + Check_Zip.IsChecked.ToString(), GetIniPath(), _zipLine);
         }
 
+        private void ChangeUPlugin_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            if (_pluginEngineLine < 0)
+            {
+                throw new Exception("UPluginEngine not initialized");
+            }
+
+            ChangeTextLine("upluginengine=" + ChangeUPlugin.IsChecked.ToString(), GetIniPath(), _pluginEngineLine);
+        }
+
+        private void SavedUnversioned_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            if (_saveUnversionedLine < 0)
+            {
+                throw new Exception("SaveUnversioned not initialized");
+            }
+
+            ChangeTextLine("saveunversioned=" + SavedUnversioned.IsChecked.ToString(), GetIniPath(), _saveUnversionedLine);
+        }
+
+        private bool NukeOutputDirectory()
+        {
+            DirectoryInfo directory = new DirectoryInfo(GetOutputPath());
+
+            foreach (FileInfo file in directory.GetFiles())
+            {
+                try
+                {
+                    file.Delete();
+                }
+                catch (Exception ex)
+                {
+                    var mBoxError = "File " + file + " could not be deleted. Consider deleting it manually. " + ex.Message.ToString();
+                    MessageBox.Show(this, mBoxError);
+                    return false;
+                }
+            }
+            foreach (DirectoryInfo dir in directory.GetDirectories())
+            {
+                try
+                {
+                    dir.Delete(true);
+                }
+                catch (Exception ex)
+                {
+                    var mBoxError = "Directory " + dir + " could not be deleted. Consider deleting it manually. " + ex.Message.ToString();
+                    MessageBox.Show(this, mBoxError);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public void Check_Waiting_Progress()
         {
             if (!bw.IsBusy)
@@ -598,6 +721,11 @@ namespace UE4MarketplacePluginAssist
         {
             _waitingProgress.Clear();
 
+            if (!NukeOutputDirectory())
+            {
+                return;
+            }
+
             // Find each valid ini
             if (Directory.Exists(GetConfigDirectory()))
             {
@@ -619,13 +747,15 @@ namespace UE4MarketplacePluginAssist
                         {
                             // Valid ini, create progress window
                             // Show progress window
-                            InProgress newProgress = new InProgress();
-                            newProgress.mainWindow = this;
-                            newProgress.Text_Plugin.Text = GetPluginName();
-                            newProgress.Text_Version.Text = engineVersion;
-                            newProgress.bZip = Check_Zip.IsChecked.Value;
+                            InProgress progress = new InProgress();
+                            progress.mainWindow = this;
+                            progress.Text_Plugin.Text = GetPluginName();
+                            progress.Text_Version.Text = engineVersion;
+                            progress.bZip = Check_Zip.IsChecked.Value;
+                            progress.bUProjectEngineVersion = ChangeUPlugin.IsChecked.Value;
+                            progress.bSaveUnversioned = SavedUnversioned.IsChecked.Value;
 
-                            _waitingProgress.Add(new WaitingProgress(newProgress, fileVersion));
+                            _waitingProgress.Add(new WaitingProgress(progress, fileVersion));
                         }
                     }
                 }
@@ -648,13 +778,21 @@ namespace UE4MarketplacePluginAssist
 
         private void Button_Start_Click(object sender, RoutedEventArgs e)
         {
+            if (!NukeOutputDirectory())
+            {
+                return;
+            }
+
             // Show progress window
             progress = new InProgress();
             progress.mainWindow = this;
             progress.Text_Plugin.Text = GetPluginName();
             progress.Text_Version.Text = engineVersion;
-            progress.Show();
             progress.bZip = Check_Zip.IsChecked.Value;
+            progress.bUProjectEngineVersion = ChangeUPlugin.IsChecked.Value;
+            progress.bSaveUnversioned = SavedUnversioned.IsChecked.Value;
+
+            progress.Show();
             Hide();
 
             FireUpBackgroundWorker();

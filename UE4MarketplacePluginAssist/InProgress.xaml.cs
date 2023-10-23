@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using static System.Windows.Media.ColorConverter;
 
 namespace UE4MarketplacePluginAssist
@@ -36,6 +39,8 @@ namespace UE4MarketplacePluginAssist
     {
         public MainWindow mainWindow;
         public bool bZip;
+        public bool bUProjectEngineVersion;
+        public bool bSaveUnversioned;
 
         private string _logPath;
         private string _logFile;
@@ -93,6 +98,16 @@ namespace UE4MarketplacePluginAssist
             stream.Position = 0;
 
             return stream;
+        }
+
+        private bool CheckDirPath(DirectoryInfo dir, string testDir, string preText, bool bTest = false)
+        {
+            if (dir != null && !bTest)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private bool CheckZipPath(DirectoryInfo dir, string testDir, string preText, bool bTest = false)
@@ -237,35 +252,109 @@ namespace UE4MarketplacePluginAssist
                 }
             }
 
+            // Change the .uplugin version based on the engine that packaged it
+            if (bUProjectEngineVersion && bSuccess)
+            {
+                string newVersion = mainWindow.engineVersion;
+
+                var list = Enumerable
+                    .Range(0, newVersion.Length/1)
+                    .Select(i => newVersion.Substring(i*1, 1));
+                newVersion = string.Join(".", list);
+
+                DirectoryInfo packDir = new DirectoryInfo(mainWindow.GetPackagedPath());
+                if (!CheckDirPath(packDir, mainWindow.GetZipPath(), "PluginDirectory"))
+                {
+                    var mBoxError = "Engine version could not be modified. .uplugin engine version may be incorrect.";
+                    MessageBox.Show(this, mBoxError);
+                    return;
+                }
+
+                string[] files = Directory.GetFiles(packDir.FullName);
+                foreach (string f in files)
+                {
+                    if (File.Exists(f))
+                    {
+                        // Remove the directory path
+                        string fileName = f.Split('\\').Last();
+                        // Grab the extension
+                        fileName = fileName.Split('.').Last();
+
+                        if (fileName.EndsWith("uplugin"))
+                        {
+                            bool bWantsUpdatedLine = false;
+                            string newLine = "";
+                            int line = 0;
+
+                            // Found the .uplugin, determine the EngineVersion line
+                            string engineVersion = "\"EngineVersion\"";
+                            using (StreamReader sr = File.OpenText(f))
+                            {
+                                string s = "";
+                                while ((s = sr.ReadLine()) != null)
+                                {
+                                    if (s.Contains(engineVersion))
+                                    {
+                                        string prefix = MainWindow.SplitString(engineVersion, ":").First();
+                                        newLine = "\t" + prefix + ": \"" + newVersion + "\",";
+
+                                        bWantsUpdatedLine = true;
+                                        break;
+                                    }
+                                    line++;
+                                }
+                            }
+
+                            // Not inside StreamReader - the file is in use and will error
+                            if (bWantsUpdatedLine)
+                            {
+                                string[] arrLine = File.ReadAllLines(f);
+                                arrLine[line] = newLine;
+                                File.WriteAllLines(f, arrLine);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Save unversioned content if desired
+            if (bSaveUnversioned && bSuccess)
+            {
+                string cmd = "/C " + "\"" + mainWindow.GenerateSaveUnversionedCommand() + "\"";
+                Process newProcess = Process.Start("CMD.exe", cmd);
+                newProcess.WaitForExit();
+            }
+
             // Zip the plugin in preparation for distribution if desired
             if (bZip && bSuccess)
             {
                 // Determine zip file
-                DirectoryInfo pluginDir = Directory.GetParent(mainWindow.GetPluginDirectory());
-                if (!CheckZipPath(pluginDir, mainWindow.GetPluginDirectory(), "PluginDirectory"))
+                DirectoryInfo pluginDir = new DirectoryInfo(mainWindow.GetZipPath());
+                if (!CheckZipPath(pluginDir, mainWindow.GetZipPath(), "PluginDirectory"))
                 {
                     return;
                 }
 
-                string testDir = pluginDir.FullName;
-                pluginDir = Directory.GetParent(pluginDir.FullName);
-                if (!CheckZipPath(pluginDir, testDir, "PluginDirectoryParent"))
+                DirectoryInfo zipDir = Directory.GetParent(pluginDir.FullName);
+                if (!CheckZipPath(pluginDir, zipDir.FullName, "PluginDirectoryParent"))
                 {
                     return;
                 }
-                
-                string zipPath = pluginDir.FullName;
+
+                string zipPath = zipDir.FullName;
                 string pluginName = mainWindow.GetPluginName();
                 string engineVersion = mainWindow.engineVersion;
 
                 string zipFile = zipPath + "\\" + pluginName + "_" + engineVersion + ".zip";
 
                 // Get binaries and intermediate ready to move
-                string binariesSrc = mainWindow.GetPluginDirectory() + "Binaries\\";
-                string intermediateSrc = mainWindow.GetPluginDirectory() + "Intermediate\\";
+                string binariesSrc = pluginDir.FullName + "\\Binaries\\";
+                string intermediateSrc = pluginDir.FullName + "\\Intermediate\\";
 
-                string binariesTgt = pluginDir.FullName + "\\Binaries\\";
-                string intermediateTgt = pluginDir.FullName + "\\Intermediate\\";
+                string binariesTgt = zipDir.FullName + "\\Binaries\\";
+                string intermediateTgt = zipDir.FullName + "\\Intermediate\\";
 
                 // Move binaries and intermediate out in preparation to zip the plugin
                 if (Directory.Exists(binariesSrc))
@@ -278,7 +367,7 @@ namespace UE4MarketplacePluginAssist
                     Directory.Move(intermediateSrc, intermediateTgt);
                 }
 
-                while(Directory.Exists(binariesSrc) || Directory.Exists(intermediateSrc))
+                while (Directory.Exists(binariesSrc) || Directory.Exists(intermediateSrc))
                 {
                     // Hang here until it has finished moving them...
                 }
@@ -292,7 +381,7 @@ namespace UE4MarketplacePluginAssist
 
                 try
                 {
-                    ZipFile.CreateFromDirectory(mainWindow.GetPluginDirectory(), zipFile);
+                    ZipFile.CreateFromDirectory(mainWindow.GetZipPath(), zipFile);
                 }
                 catch (Exception ex)
                 {

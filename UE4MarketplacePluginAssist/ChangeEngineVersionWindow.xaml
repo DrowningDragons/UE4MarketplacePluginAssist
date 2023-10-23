@@ -12,7 +12,7 @@
     <Grid>
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBox x:Name="Text_EngineVersion" FontWeight="Bold" Height="30" MaxLength="3" TextWrapping="Wrap" Text="427" Width="150" PreviewTextInput="EngineVersion_PreviewTextInput" Foreground="#f1f1f1" Background="#151515" HorizontalAlignment="Center" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                <TextBox x:Name="Text_EngineVersion" FontWeight="Bold" Height="30" MaxLength="3" TextWrapping="Wrap" Text="510" Width="150" PreviewTextInput="EngineVersion_PreviewTextInput" Foreground="#f1f1f1" Background="#151515" HorizontalAlignment="Center" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,00,0,0">
                     <Button x:Name="Button_IncrEngine" Content="↑" Width="20" Height="15" Click="Button_IncrEngine_Click" VerticalContentAlignment="Top" HorizontalContentAlignment="Center" FontSize="8"/>
                     <Button x:Name="Button_DecrEngine" VerticalAlignment="Bottom" Content="↓" Width="20" Height="15" Click="Button_DecrEngine_Click" HorizontalContentAlignment="Center" VerticalContentAlignment="Bottom" FontSize="8"/>
