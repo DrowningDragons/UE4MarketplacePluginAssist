@@ -11,6 +11,8 @@ Feel free to check out the preview video here to understand what it does in deta
 # Download
 Every update is compiled for Windows already. You can download them here: https://github.com/DrowningDragons/UE4MarketplacePluginAssist/tree/master/Binaries
 
+# Changelog
+
 ## Version 1.1.0
 * 510 is now default engine version
 * VS2022 is now default version
@@ -21,17 +23,22 @@ Every update is compiled for Windows already. You can download them here: https:
 * Added check for output directory being cleared successfully
 * Fixed bug where wrong directory was zipped (you will no longer get .git files)
 * Fixed bug where data validation incorrectly allowed checkboxes to be enabled
+
 ## Version 1.0.4
 * error checking for zip functionality
 * removed unnecessary 'using' statements
 * modified variables to fit standards better
 * modified variable access modifiers
+
 ## Version 1.0.3
 * fixed issues with versions
+
 ## Version 1.0.2
 * support for major engine versions above 4 (in preparation for UE5)
 * made engine version change UX better
+
 ## Version 1.0.1
 * support for config.config with visual studio version setting
+
 ## Version 1.0.0
 * initial release
