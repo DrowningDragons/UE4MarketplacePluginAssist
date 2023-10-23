@@ -25,20 +25,20 @@ Every update is compiled for Windows already. You can download them here: https:
 * Fixed bug where data validation incorrectly allowed checkboxes to be enabled
 
 ## Version 1.0.4
-* error checking for zip functionality
-* removed unnecessary 'using' statements
-* modified variables to fit standards better
-* modified variable access modifiers
+* Error checking for zip functionality
+* Removed unnecessary 'using' statements
+* Modified variables to fit standards better
+* Modified variable access modifiers
 
 ## Version 1.0.3
-* fixed issues with versions
+* Fixed issues with versions
 
 ## Version 1.0.2
-* support for major engine versions above 4 (in preparation for UE5)
-* made engine version change UX better
+* Support for major engine versions above 4 (in preparation for UE5)
+* Sade engine version change UX better
 
 ## Version 1.0.1
-* support for config.config with visual studio version setting
+* Support for config.config with visual studio version setting
 
 ## Version 1.0.0
-* initial release
+* Initial release
