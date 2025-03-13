@@ -39,6 +39,8 @@ namespace UE4MarketplacePluginAssist
     {
         public MainWindow mainWindow;
         public bool bZip;
+        public bool bZipFilterPlugin;
+        public bool bZipBinaries;
         public bool bUProjectEngineVersion;
         public bool bSaveUnversioned;
 
@@ -386,7 +388,7 @@ namespace UE4MarketplacePluginAssist
                 string intermediateTgt = zipDir.FullName + "\\Intermediate\\";
 
                 // Move binaries and intermediate out in preparation to zip the plugin
-                if (Directory.Exists(binariesSrc))
+                if (!bZipBinaries && Directory.Exists(binariesSrc))
                 {
                     Directory.Move(binariesSrc, binariesTgt);
                 }
@@ -396,7 +398,7 @@ namespace UE4MarketplacePluginAssist
                     Directory.Move(intermediateSrc, intermediateTgt);
                 }
 
-                while (Directory.Exists(binariesSrc) || Directory.Exists(intermediateSrc))
+                while ((Directory.Exists(binariesSrc) && !bZipBinaries) || Directory.Exists(intermediateSrc))
                 {
                     // Hang here until it has finished moving them...
                 }
@@ -433,7 +435,7 @@ namespace UE4MarketplacePluginAssist
                 }
 
                 // Move the Binaries and Intermediate back
-                if (Directory.Exists(binariesTgt))
+                if (!bZipBinaries && Directory.Exists(binariesTgt))
                 {
                     Directory.Move(binariesTgt, binariesSrc);
                 }
@@ -443,7 +445,7 @@ namespace UE4MarketplacePluginAssist
                     Directory.Move(intermediateTgt, intermediateSrc);
                 }
 
-                while (Directory.Exists(binariesTgt) || Directory.Exists(intermediateTgt))
+                while ((Directory.Exists(binariesTgt) && !bZipBinaries) || Directory.Exists(intermediateTgt))
                 {
                     // Hang here until it has finished moving them...
                 }

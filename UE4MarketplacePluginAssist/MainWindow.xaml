@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UE4MarketplacePluginAssist"
         mc:Ignorable="d"
-        Title="UE4 Marketplace Plugin Assist" Height="480" Width="800"
+        Title="UE4 Marketplace Plugin Assist" Height="540" Width="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#262626">
@@ -34,6 +34,14 @@
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
                 <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Zip Plugin on Success:" Foreground="#f1f1f1"/>
                 <CheckBox x:Name="Check_Zip" Margin="10,0,0,0" IsEnabled="False" IsChecked="True" Content="" Checked="CheckBox_Checked" Unchecked="CheckBox_Checked"/>
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Zip Include FilterPlugin.ini:" Foreground="#f1f1f1"/>
+                <CheckBox x:Name="ZipFilterPlugin" Margin="10,0,0,0" IsEnabled="False" IsChecked="True" Content="" Checked="ZipBinaries_Checked" Unchecked="ZipBinaries_Checked"/>
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Zip Include Binaries:" Foreground="#f1f1f1"/>
+                <CheckBox x:Name="ZipBinaries" Margin="10,0,0,0" IsEnabled="False" IsChecked="False" Content="" Checked="ZipBinaries_Checked" Unchecked="ZipBinaries_Checked"/>
             </StackPanel>
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal" HorizontalAlignment="Left">
                 <TextBlock TextWrapping="Wrap" Height="30" IsEnabled="False" Text="Modify .uplugin Engine Version:" Foreground="#f1f1f1"/>

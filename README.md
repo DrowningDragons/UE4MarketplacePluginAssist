@@ -15,6 +15,15 @@ Every update is compiled for Windows already. You can download them here: https:
 
 # Changelog
 
+
+## Version 1.2.0
+_Your config files won't load anymore unless you manually edit in `zipBinaries=False` and `zipFilterPlugin=True`!_
+
+* Add option to include Binaries in zip (disabled by default)
+	* Do not use this if submitting to Fab
+* Add option to include FilterPlugin.ini in zip (enabled by default)
+	* Use this if submitting to Fab
+
 ## Version 1.1.1
 * Copy over FilterPlugin.ini
 

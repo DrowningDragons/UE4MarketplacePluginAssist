@@ -1,4 +1,4 @@
-﻿/**
+﻿/*
 Copyright(c) 2020 Jared Taylor
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -35,7 +35,7 @@ using System.IO.Compression;
 
 namespace UE4MarketplacePluginAssist
 {
-    public struct WaitingProgress
+    public readonly struct WaitingProgress : IEquatable<WaitingProgress>
     {
         public readonly InProgress progress;
         public readonly string engineVersion;
@@ -45,6 +45,24 @@ namespace UE4MarketplacePluginAssist
             this.progress = progress;
             this.engineVersion = engineVersion;
         }
+
+        public bool Equals(WaitingProgress other)
+        {
+            return Equals(progress, other.progress) && engineVersion == other.engineVersion;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is WaitingProgress other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((progress != null ? progress.GetHashCode() : 0) * 397) ^ (engineVersion != null ? engineVersion.GetHashCode() : 0);
+            }
+        }
     }
 
     /// <summary>
@@ -53,6 +71,11 @@ namespace UE4MarketplacePluginAssist
     public partial class MainWindow : Window
     {
         /*
+         * app version 1.2.0
+         *      Support zipping binaries
+         *      Support not zipping FilterPlugin.ini
+         *      Deletes FilterPlugin.ini from source directory when done
+         *      Code clean-up
          * app version 1.1.1
          *      Copy over FilterPlugin.ini
          * app version 1.1.0
@@ -90,6 +113,8 @@ namespace UE4MarketplacePluginAssist
         private int _pluginLine = -1;
         private int _outputLine = -1;
         private int _zipLine = -1;
+        private int _zipFilterPluginLine = -1;
+        private int _zipBinariesLine = -1;
         private int _pluginEngineLine = -1;
         private int _saveUnversionedLine = -1;
 
@@ -147,7 +172,7 @@ namespace UE4MarketplacePluginAssist
                 {
                     using (StreamReader sr = File.OpenText(configFiles[0]))
                     {
-                        string s = "";
+                        string s;
                         while ((s = sr.ReadLine()) != null)
                         {
                             if (s.StartsWith("visualstudio="))
@@ -169,7 +194,7 @@ namespace UE4MarketplacePluginAssist
             else
             {
                 // No write access?
-                System.Environment.Exit(-2);
+                Environment.Exit(-2);
                 return;
             }
 
@@ -217,11 +242,6 @@ namespace UE4MarketplacePluginAssist
             return Text_PluginRoot.Text;
         }
 
-        private string GetVisualStudioVersion()
-        {
-            return Text_VSVersion.Text;
-        }
-
         public string GetPluginDirectory()
         {
             string[] str = SplitString(GetPluginPath(), "\\");
@@ -257,12 +277,6 @@ namespace UE4MarketplacePluginAssist
         public static string[] SplitString(string s, string separator)
         {
             return s.Split(new string[] { separator }, StringSplitOptions.None);
-        }
-        private string GetDirectoryFromFileName(string fileName)
-        {
-            // Remove the directory path
-            string file = fileName.Split('\\').Last();
-            return SplitString(fileName, file).First();
         }
 
         private string GenerateBatchCommand()
@@ -370,10 +384,11 @@ namespace UE4MarketplacePluginAssist
             bool bValidEngine = Directory.Exists(GetEngineRootPath());
             bool bValidPlugin = File.Exists(GetPluginPath());
             bool bValidOutput = Directory.Exists(GetOutputPath());
+            bool bValidSetup = bValidEngine && bValidPlugin && bValidOutput;
 
             // Only enable start button if all directories are valid
-            Button_Start.IsEnabled = bValidEngine && bValidPlugin && bValidOutput;
-            Button_StartAll.IsEnabled = Button_Start.IsEnabled;
+            Button_Start.IsEnabled = bValidSetup;
+            Button_StartAll.IsEnabled = bValidSetup;
 
             // Show warning if output directory is not empty
             if (bValidOutput)
@@ -420,6 +435,8 @@ namespace UE4MarketplacePluginAssist
                     sw.WriteLine("plugin=");
                     sw.WriteLine("output=");
                     sw.WriteLine("zip=True");
+                    sw.WriteLine("zipFilterPlugin=True");
+                    sw.WriteLine("zipBinaries=False");
                     sw.WriteLine("upluginengine=False");
                     sw.WriteLine("saveunversioned=False");
                 }
@@ -449,12 +466,16 @@ namespace UE4MarketplacePluginAssist
             string plugin = "";
             string output = "";
             string zip = "";
+            string zipFilterPlugin = "";
+            string zipBinaries = "";
             string upluginengine = "";
             string saveunversioned = "";
             bool bEngineRootFound = false;
             bool bPluginFound = false;
             bool bOutputFound = false;
             bool bZipFound = false;
+            bool bZipFilterPluginFound = false;
+            bool bZipBinariesFound = false;
             bool bUpluginEngineFound = false;
             bool bSaveUnversionedFound = false;
 
@@ -462,7 +483,7 @@ namespace UE4MarketplacePluginAssist
             using (StreamReader sr = File.OpenText(filePath))
             {
                 int line = 0;
-                string s = "";
+                string s;
                 while((s = sr.ReadLine()) != null)
                 {
                     if (s.StartsWith("engineroot="))
@@ -489,6 +510,18 @@ namespace UE4MarketplacePluginAssist
                         _zipLine = line;
                         bZipFound = true;
                     }
+                    else if (s.StartsWith("zipFilterPlugin="))
+                    {
+                        zipFilterPlugin = SplitString(s, "zipFilterPlugin=").Last();
+                        _zipFilterPluginLine = line;
+                        bZipFilterPluginFound = true;
+                    }
+                    else if (s.StartsWith("zipBinaries="))
+                    {
+                        zipBinaries = SplitString(s, "zipBinaries=").Last();
+                        _zipBinariesLine = line;
+                        bZipBinariesFound = true;
+                    }
                     else if (s.StartsWith("upluginengine="))
                     {
                         upluginengine = SplitString(s, "upluginengine=").Last();
@@ -506,7 +539,7 @@ namespace UE4MarketplacePluginAssist
             }
 
             // Verify both paths were found, otherwise remake the file (only once; see bRecursionTest)
-            if (!bEngineRootFound || !bPluginFound || !bOutputFound || !bZipFound || !bUpluginEngineFound || !bSaveUnversionedFound)
+            if (!bEngineRootFound || !bPluginFound || !bOutputFound || !bZipFound || !bZipFilterPluginFound || !bZipBinariesFound || !bUpluginEngineFound || !bSaveUnversionedFound)
             {
                 if (bRecursionTest)
                 {
@@ -537,15 +570,23 @@ namespace UE4MarketplacePluginAssist
 
             // Load and set zip
             Check_Zip.IsEnabled = true;
-            Check_Zip.IsChecked = zip.Equals("True") ? true : false;
+            Check_Zip.IsChecked = zip.Equals("True");
+            
+            // Load and set zip filter plugin
+            ZipFilterPlugin.IsEnabled = true;
+            ZipFilterPlugin.IsChecked = zipFilterPlugin.Equals("True");
+            
+            // Load and set zip binaries
+            ZipBinaries.IsEnabled = true;
+            ZipBinaries.IsChecked = zipBinaries.Equals("True");
 
             // Load and set uplugin engine version
             ChangeUPlugin.IsEnabled = true;
-            ChangeUPlugin.IsChecked = upluginengine.Equals("True") ? true : false;
+            ChangeUPlugin.IsChecked = upluginengine.Equals("True");
 
             // Load and set save unversioned
             SavedUnversioned.IsEnabled = true;
-            SavedUnversioned.IsChecked = saveunversioned.Equals("True") ? true : false;
+            SavedUnversioned.IsChecked = saveunversioned.Equals("True");
 
             ValidateDirectories();
         }
@@ -613,9 +654,39 @@ namespace UE4MarketplacePluginAssist
                 throw new Exception("ZipLine not initialized");
             }
 
-            ChangeTextLine("zip=" + Check_Zip.IsChecked.ToString(), GetIniPath(), _zipLine);
+            ChangeTextLine("zip=" + Check_Zip.IsChecked, GetIniPath(), _zipLine);
         }
+        
+        private void ZipFilterPlugin_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
 
+            if (_zipFilterPluginLine < 0)
+            {
+                throw new Exception("ZipFilterPluginLine not initialized");
+            }
+
+            ChangeTextLine("zipFilterPlugin=" + ZipFilterPlugin.IsChecked, GetIniPath(), _zipFilterPluginLine);
+        }
+        
+        private void ZipBinaries_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+            
+            if (_zipBinariesLine < 0)
+            {
+                throw new Exception("ZipBinariesLine not initialized");
+            }
+            
+            ChangeTextLine("zipBinaries=" + ZipBinaries.IsChecked, GetIniPath(), _zipBinariesLine);
+        }
+        
         private void ChangeUPlugin_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsInitialized)
@@ -628,7 +699,7 @@ namespace UE4MarketplacePluginAssist
                 throw new Exception("UPluginEngine not initialized");
             }
 
-            ChangeTextLine("upluginengine=" + ChangeUPlugin.IsChecked.ToString(), GetIniPath(), _pluginEngineLine);
+            ChangeTextLine("upluginengine=" + ChangeUPlugin.IsChecked, GetIniPath(), _pluginEngineLine);
         }
 
         private void SavedUnversioned_Checked(object sender, RoutedEventArgs e)
@@ -658,7 +729,7 @@ namespace UE4MarketplacePluginAssist
                 }
                 catch (Exception ex)
                 {
-                    var mBoxError = "File " + file + " could not be deleted. Consider deleting it manually. " + ex.Message.ToString();
+                    var mBoxError = "File " + file + " could not be deleted. Consider deleting it manually. " + ex.Message;
                     MessageBox.Show(this, mBoxError);
                     return false;
                 }
@@ -671,7 +742,7 @@ namespace UE4MarketplacePluginAssist
                 }
                 catch (Exception ex)
                 {
-                    var mBoxError = "Directory " + dir + " could not be deleted. Consider deleting it manually. " + ex.Message.ToString();
+                    var mBoxError = "Directory " + dir + " could not be deleted. Consider deleting it manually. " + ex.Message;
                     MessageBox.Show(this, mBoxError);
                     return false;
                 }
@@ -689,9 +760,9 @@ namespace UE4MarketplacePluginAssist
                 {
                     WaitingProgress pr = _waitingProgress[0];
                     bool bFoundRemoval = false;
-                    for (int i = 0; i < _waitingProgress.Count; i++)
+                    foreach (var t in _waitingProgress)
                     {
-                        pr = _waitingProgress[i];
+                        pr = t;
                         if (progress == pr.progress)
                         {
                             bFoundRemoval = true;
@@ -790,9 +861,11 @@ namespace UE4MarketplacePluginAssist
             progress.mainWindow = this;
             progress.Text_Plugin.Text = GetPluginName();
             progress.Text_Version.Text = engineVersion;
-            progress.bZip = Check_Zip.IsChecked.Value;
-            progress.bUProjectEngineVersion = ChangeUPlugin.IsChecked.Value;
-            progress.bSaveUnversioned = SavedUnversioned.IsChecked.Value;
+            progress.bZip = Check_Zip.IsChecked != null && Check_Zip.IsChecked.Value;
+            progress.bZipFilterPlugin = ZipFilterPlugin.IsChecked != null && ZipFilterPlugin.IsChecked.Value;
+            progress.bZipBinaries = ZipBinaries.IsChecked != null && ZipBinaries.IsChecked.Value;
+            progress.bUProjectEngineVersion = ChangeUPlugin.IsChecked != null && ChangeUPlugin.IsChecked.Value;
+            progress.bSaveUnversioned = SavedUnversioned.IsChecked != null && SavedUnversioned.IsChecked.Value;
 
             progress.Show();
             Hide();
@@ -833,7 +906,7 @@ namespace UE4MarketplacePluginAssist
             _p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             _p.StartInfo.FileName = "cmd.exe";
             _p.StartInfo.Arguments = e.Argument.ToString();
-            bool ret = _p.Start();
+            _p.Start();
 
             e.Result = _p.StandardOutput.ReadToEnd();
 
