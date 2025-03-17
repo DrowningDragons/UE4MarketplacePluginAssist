@@ -255,7 +255,7 @@ namespace UE4MarketplacePluginAssist
             }
 
             // Copy over the FilterPlugin.ini
-            if (bSuccess)
+            if (bSuccess && bZipFilterPlugin)
             {
                 DirectoryInfo resultDir = new DirectoryInfo(mainWindow.GetPackagedPath());
                 string configDir = resultDir.FullName + "\\Config";
