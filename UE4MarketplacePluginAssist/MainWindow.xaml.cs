@@ -71,6 +71,8 @@ namespace UE4MarketplacePluginAssist
     public partial class MainWindow : Window
     {
         /*
+         * app version 1.2.1
+         *      Fixed inability to delete output directory content
          * app version 1.2.0
          *      Support zipping binaries
          *      Support not zipping FilterPlugin.ini
@@ -719,36 +721,52 @@ namespace UE4MarketplacePluginAssist
 
         private bool NukeOutputDirectory()
         {
-            DirectoryInfo directory = new DirectoryInfo(GetOutputPath());
+            string outputPath = GetOutputPath();
 
-            foreach (FileInfo file in directory.GetFiles())
+            if (!Directory.Exists(outputPath))
+                return true;
+
+            try
+            {
+                DeleteDirectoryContents(new DirectoryInfo(outputPath));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Failed to delete contents of: {outputPath}\n\n{ex.Message}", "Delete Error");
+                return false;
+            }
+        }
+        
+        private void DeleteDirectoryContents(DirectoryInfo directory)
+        {
+            foreach (FileInfo file in directory.GetFiles("*", SearchOption.AllDirectories))
             {
                 try
                 {
+                    file.IsReadOnly = false;
                     file.Delete();
                 }
-                catch (Exception ex)
+                catch (IOException)
                 {
-                    var mBoxError = "File " + file + " could not be deleted. Consider deleting it manually. " + ex.Message;
-                    MessageBox.Show(this, mBoxError);
-                    return false;
-                }
-            }
-            foreach (DirectoryInfo dir in directory.GetDirectories())
-            {
-                try
-                {
-                    dir.Delete(true);
-                }
-                catch (Exception ex)
-                {
-                    var mBoxError = "Directory " + dir + " could not be deleted. Consider deleting it manually. " + ex.Message;
-                    MessageBox.Show(this, mBoxError);
-                    return false;
+                    Thread.Sleep(50);
+                    file.Delete();
                 }
             }
 
-            return true;
+            foreach (DirectoryInfo subdir in directory.GetDirectories("*", SearchOption.AllDirectories).OrderByDescending(d => d.FullName.Length))
+            {
+                try
+                {
+                    subdir.Attributes = FileAttributes.Normal;
+                    subdir.Delete(true);
+                }
+                catch (IOException)
+                {
+                    Thread.Sleep(50);
+                    subdir.Delete(true);
+                }
+            }
         }
 
         public void Check_Waiting_Progress()
